@@ -11,6 +11,8 @@ export const payments = mysqlTable("payments", { id: int("id").autoincrement().p
 export const extensionEvents = mysqlTable("extensionEvents", { id: int("id").autoincrement().primaryKey(), licenseId: int("licenseId"), userId: int("userId"), deviceId: varchar("deviceId", { length: 128 }), eventType: varchar("eventType", { length: 96 }).notNull(), payload: text("payload"), createdAt: timestamp("createdAt").defaultNow().notNull() });
 export const supportTickets = mysqlTable("supportTickets", { id: int("id").autoincrement().primaryKey(), userId: int("userId").notNull(), subject: varchar("subject", { length: 190 }).notNull(), message: text("message").notNull(), status: mysqlEnum("status", ["open", "pending", "resolved"]).notNull().default("open"), createdAt: timestamp("createdAt").defaultNow().notNull(), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull() });
 export const userPreferences = mysqlTable("userPreferences", { id: int("id").autoincrement().primaryKey(), userId: int("userId").notNull().unique(), extensionEnabled: int("extensionEnabled").notNull().default(1), emailAlerts: int("emailAlerts").notNull().default(1), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull() });
+export const globalControls = mysqlTable("globalControls", { id: int("id").autoincrement().primaryKey(), maintenanceEnabled: int("maintenanceEnabled").notNull().default(0), maintenanceMessage: varchar("maintenanceMessage", { length: 255 }).notNull().default("Extensão temporariamente em manutenção."), updatedBy: int("updatedBy"), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull() });
+export const securityAlerts = mysqlTable("securityAlerts", { id: int("id").autoincrement().primaryKey(), userId: int("userId"), licenseId: int("licenseId"), deviceId: varchar("deviceId", { length: 128 }), alertType: varchar("alertType", { length: 96 }).notNull(), message: varchar("message", { length: 255 }).notNull(), payload: text("payload"), resolved: int("resolved").notNull().default(0), createdAt: timestamp("createdAt").defaultNow().notNull() });
 
 export type User = typeof users.$inferSelect; export type InsertUser = typeof users.$inferInsert;
 export type License = typeof licenses.$inferSelect; export type InsertLicense = typeof licenses.$inferInsert;
@@ -19,6 +21,8 @@ export type Payment = typeof payments.$inferSelect; export type InsertPayment = 
 export type ExtensionEvent = typeof extensionEvents.$inferSelect; export type InsertExtensionEvent = typeof extensionEvents.$inferInsert;
 export type SupportTicket = typeof supportTickets.$inferSelect; export type InsertSupportTicket = typeof supportTickets.$inferInsert;
 export type UserPreference = typeof userPreferences.$inferSelect; export type InsertUserPreference = typeof userPreferences.$inferInsert;
+export type GlobalControl = typeof globalControls.$inferSelect; export type InsertGlobalControl = typeof globalControls.$inferInsert;
+export type SecurityAlert = typeof securityAlerts.$inferSelect; export type InsertSecurityAlert = typeof securityAlerts.$inferInsert;
 
 export const planCatalog = [
   { id: "trial", name: "Free trial", price: 0, cadence: "15 minutos", description: "Teste o fluxo completo sem compromisso.", accent: "neutral", features: ["1 dispositivo", "Todas as automações", "Suporte por e-mail"] },
