@@ -53,7 +53,7 @@ export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = typeof payments.$inferInsert;
 
 export const planCatalog = [
-  { id: "trial", name: "Free trial", price: 0, cadence: "7 dias", description: "Teste o fluxo completo sem compromisso.", accent: "neutral", features: ["1 dispositivo", "Todas as automações", "Suporte por e-mail"] },
+  { id: "trial", name: "Free trial", price: 0, cadence: "15 minutos", description: "Teste o fluxo completo sem compromisso.", accent: "neutral", features: ["1 dispositivo", "Todas as automações", "Suporte por e-mail"] },
   { id: "pro", name: "Pro mensal", price: 19, cadence: "/mês", description: "Para quem quer velocidade todos os dias.", accent: "coral", features: ["Até 3 dispositivos", "Workspace inteligente", "Atualizações contínuas"] },
   { id: "studio", name: "Studio anual", price: 190, cadence: "/ano", description: "Mais controle para equipes pequenas.", accent: "lime", features: ["Até 10 dispositivos", "Gestão de licenças", "Suporte prioritário"] },
 ] as const;
