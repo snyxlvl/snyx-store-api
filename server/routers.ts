@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getAdminDashboardSummary } from "./db";
-import { countAdminEvents, getAdminPreferences, getGlobalControl, listAdminCustomers, listAdminEvents, listAdminLicenses, listAdminSubscriptions, listSecurityAlerts, listSupportTickets, resolveSecurityAlert, setGlobalControl, updateAdminPreferences } from "./admin-data";
+import { activateExtensionVersion, countAdminEvents, getAdminPreferences, getGlobalControl, listAdminCustomers, listAdminEvents, listAdminLicenses, listAdminSubscriptions, listExtensionVersions, listSecurityAlerts, listSupportTickets, resolveSecurityAlert, setGlobalControl, updateAdminPreferences } from "./admin-data";
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
@@ -40,6 +40,8 @@ export const appRouter = router({
     setGlobalControl: adminProcedure.input(z.object({ enabled: z.boolean(), message: z.string().max(255).optional() })).mutation(({ ctx, input }) => setGlobalControl(ctx.user.id, input.enabled, input.message)),
     securityAlerts: adminProcedure.query(() => listSecurityAlerts()),
     resolveSecurityAlert: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => resolveSecurityAlert(input.id)),
+    extensionVersions: adminProcedure.query(() => listExtensionVersions()),
+    activateExtensionVersion: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => activateExtensionVersion(input.id)),
     preferences: adminProcedure.query(({ ctx }) => getAdminPreferences(ctx.user.id)),
     updatePreferences: adminProcedure.input(z.object({ extensionEnabled: z.boolean().optional(), emailAlerts: z.boolean().optional() })).mutation(({ ctx, input }) => updateAdminPreferences(ctx.user.id, input)),
   }),

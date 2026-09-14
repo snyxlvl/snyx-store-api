@@ -13,6 +13,7 @@ export const supportTickets = mysqlTable("supportTickets", { id: int("id").autoi
 export const userPreferences = mysqlTable("userPreferences", { id: int("id").autoincrement().primaryKey(), userId: int("userId").notNull().unique(), extensionEnabled: int("extensionEnabled").notNull().default(1), emailAlerts: int("emailAlerts").notNull().default(1), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull() });
 export const globalControls = mysqlTable("globalControls", { id: int("id").autoincrement().primaryKey(), maintenanceEnabled: int("maintenanceEnabled").notNull().default(0), maintenanceMessage: varchar("maintenanceMessage", { length: 255 }).notNull().default("Extensão temporariamente em manutenção."), updatedBy: int("updatedBy"), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull() });
 export const securityAlerts = mysqlTable("securityAlerts", { id: int("id").autoincrement().primaryKey(), userId: int("userId"), licenseId: int("licenseId"), deviceId: varchar("deviceId", { length: 128 }), alertType: varchar("alertType", { length: 96 }).notNull(), message: varchar("message", { length: 255 }).notNull(), payload: text("payload"), resolved: int("resolved").notNull().default(0), createdAt: timestamp("createdAt").defaultNow().notNull() });
+export const extensionVersions = mysqlTable("extensionVersions", { id: int("id").autoincrement().primaryKey(), version: varchar("version", { length: 32 }).notNull(), fileKey: varchar("fileKey", { length: 255 }).notNull(), fileUrl: varchar("fileUrl", { length: 255 }).notNull(), checksum: varchar("checksum", { length: 64 }).notNull(), changelog: text("changelog"), active: int("active").notNull().default(0), uploadedBy: int("uploadedBy").notNull(), createdAt: timestamp("createdAt").defaultNow().notNull() });
 
 export type User = typeof users.$inferSelect; export type InsertUser = typeof users.$inferInsert;
 export type License = typeof licenses.$inferSelect; export type InsertLicense = typeof licenses.$inferInsert;
@@ -23,6 +24,7 @@ export type SupportTicket = typeof supportTickets.$inferSelect; export type Inse
 export type UserPreference = typeof userPreferences.$inferSelect; export type InsertUserPreference = typeof userPreferences.$inferInsert;
 export type GlobalControl = typeof globalControls.$inferSelect; export type InsertGlobalControl = typeof globalControls.$inferInsert;
 export type SecurityAlert = typeof securityAlerts.$inferSelect; export type InsertSecurityAlert = typeof securityAlerts.$inferInsert;
+export type ExtensionVersion = typeof extensionVersions.$inferSelect; export type InsertExtensionVersion = typeof extensionVersions.$inferInsert;
 
 export const planCatalog = [
   { id: "trial", name: "Free trial", price: 0, cadence: "15 minutos", description: "Teste o fluxo completo sem compromisso.", accent: "neutral", features: ["1 dispositivo", "Todas as automações", "Suporte por e-mail"] },

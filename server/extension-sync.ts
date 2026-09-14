@@ -1,13 +1,20 @@
 import type { Express, Request, Response } from "express";
-import { and, count, eq } from "drizzle-orm";
-import { extensionEvents, licenseDevices, licenses } from "../drizzle/schema";
+import { and, count, desc, eq } from "drizzle-orm";
+import { extensionEvents, extensionVersions, licenseDevices, licenses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { createSecurityAlert, getGlobalControl } from "./admin-data";
 
 export function isUnlimitedPlan(plan: string) { return plan === "founder"; }
 export function isSuspiciousExtensionActivity(eventType: string, payload: unknown) { return /bypass|tamper|inject|debug|devtools|unauthorized|spoof|invalid/i.test(`${eventType} ${JSON.stringify(payload || {})}`); }
+export function isValidExtensionVersion(version: string) { return /^\d+\.\d+\.\d+(?:[-+][a-z0-9.-]+)?$/i.test(version.trim()); }
 
 export function registerExtensionSync(app: Express) {
+  app.get("/api/extension/latest", async (_req: Request, res: Response) => {
+    const db = await getDb();
+    if (!db) return res.status(503).json({ ok: false, error: "Banco indisponível" });
+    const rows = await db.select({ version: extensionVersions.version, fileUrl: extensionVersions.fileUrl, checksum: extensionVersions.checksum, changelog: extensionVersions.changelog, createdAt: extensionVersions.createdAt }).from(extensionVersions).where(eq(extensionVersions.active, 1)).orderBy(desc(extensionVersions.createdAt)).limit(1);
+    return res.json({ ok: true, version: rows[0] || null });
+  });
   app.post("/api/extension/validate", async (req: Request, res: Response) => {
     try {
       const { licenseKey, serial: legacySerial, deviceId } = req.body || {};
