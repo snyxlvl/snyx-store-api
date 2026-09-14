@@ -29,7 +29,7 @@ export default function Home() {
     if (planId === "trial") {
       if (!user) return startLogin();
       toast.success("Seu teste grátis está pronto para começar.");
-      window.location.href = "/app";
+      window.location.href = "/cliente";
       return;
     }
     if (!user) return startLogin();
@@ -45,10 +45,10 @@ export default function Home() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[#171717]/10 bg-[#f6f1e9]/90 backdrop-blur-xl">
       <div className="mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-5 lg:px-8"><Logo />
         <nav className="hidden items-center gap-8 text-[13px] font-medium text-[#171717]/65 md:flex"><a href="#produto" className="transition hover:text-[#171717]">Produto</a><a href="#como-funciona" className="transition hover:text-[#171717]">Como funciona</a><a href="#planos" className="transition hover:text-[#171717]">Planos</a><a href="#faq" className="transition hover:text-[#171717]">FAQ</a></nav>
-        <div className="hidden items-center gap-3 md:flex"><Link href="/app" className="px-3 py-2 text-[13px] font-medium text-[#171717]/65 hover:text-[#171717]">Área do cliente</Link><Button onClick={() => user ? (window.location.href = "/app") : startLogin()} className="h-10 rounded-full bg-[#171717] px-5 text-xs font-semibold text-[#f9f4ed] shadow-[3px_3px_0_#e11d2e] hover:bg-[#2c2c2c]">Começar agora <ArrowUpRight className="ml-2 h-3.5 w-3.5" /></Button></div>
+        <div className="hidden items-center gap-3 md:flex"><Link href="/cliente" className="px-3 py-2 text-[13px] font-medium text-[#171717]/65 hover:text-[#171717]">Área do cliente</Link><Button onClick={() => user ? (window.location.href = "/app") : startLogin()} className="h-10 rounded-full bg-[#171717] px-5 text-xs font-semibold text-[#f9f4ed] shadow-[3px_3px_0_#e11d2e] hover:bg-[#2c2c2c]">Começar agora <ArrowUpRight className="ml-2 h-3.5 w-3.5" /></Button></div>
         <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Abrir menu">{mobileOpen ? <X /> : <Menu />}</button>
       </div>
-      {mobileOpen && <div className="border-t border-[#171717]/10 bg-[#f6f1e9] px-5 py-5 md:hidden"><div className="flex flex-col gap-4 text-sm"><a href="#produto" onClick={() => setMobileOpen(false)}>Produto</a><a href="#planos" onClick={() => setMobileOpen(false)}>Planos</a><Link href="/app">Área do cliente</Link><Button onClick={() => startLogin()} className="rounded-full bg-[#171717] text-[#f9f4ed]">Começar agora</Button></div></div>}
+      {mobileOpen && <div className="border-t border-[#171717]/10 bg-[#f6f1e9] px-5 py-5 md:hidden"><div className="flex flex-col gap-4 text-sm"><a href="#produto" onClick={() => setMobileOpen(false)}>Produto</a><a href="#planos" onClick={() => setMobileOpen(false)}>Planos</a><Link href="/cliente">Área do cliente</Link><Button onClick={() => startLogin()} className="rounded-full bg-[#171717] text-[#f9f4ed]">Começar agora</Button></div></div>}
     </header>
 
     <main>

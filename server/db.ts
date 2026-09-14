@@ -1,6 +1,6 @@
 import { count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, licenseDevices, licenses, payments, users } from "../drizzle/schema";
+import { InsertUser, extensionEvents, licenseDevices, licenses, payments, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -80,4 +80,17 @@ export async function getAdminDashboardSummary() {
     distribution: { active, trial, other: Math.max(0, recentRows.length - active - trial) },
     devices,
   };
+}
+
+export async function getCustomerAccount(userId: number) {
+  const db = await getDb();
+  if (!db) return { license: null, devices: [], activity: [] };
+  const licenseRows = await db.select({ id: licenses.id, key: licenses.key, plan: licenses.plan, status: licenses.status, maxDevices: licenses.maxDevices, expiresAt: licenses.expiresAt, createdAt: licenses.createdAt }).from(licenses).where(eq(licenses.userId, userId)).orderBy(desc(licenses.createdAt)).limit(1);
+  const license = licenseRows[0] || null;
+  if (!license) return { license: null, devices: [], activity: [] };
+  const [devices, activity] = await Promise.all([
+    db.select({ deviceId: licenseDevices.deviceId, label: licenseDevices.label, lastSeenAt: licenseDevices.lastSeenAt, createdAt: licenseDevices.createdAt }).from(licenseDevices).where(eq(licenseDevices.licenseId, license.id)).orderBy(desc(licenseDevices.lastSeenAt)).limit(50),
+    db.select({ eventType: extensionEvents.eventType, deviceId: extensionEvents.deviceId, createdAt: extensionEvents.createdAt }).from(extensionEvents).where(eq(extensionEvents.userId, userId)).orderBy(desc(extensionEvents.createdAt)).limit(30),
+  ]);
+  return { license, devices, activity };
 }
