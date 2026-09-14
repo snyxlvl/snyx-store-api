@@ -4,6 +4,9 @@ import { extensionEvents, licenseDevices, licenses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { createSecurityAlert, getGlobalControl } from "./admin-data";
 
+export function isUnlimitedPlan(plan: string) { return plan === "founder"; }
+export function isSuspiciousExtensionActivity(eventType: string, payload: unknown) { return /bypass|tamper|inject|debug|devtools|unauthorized|spoof|invalid/i.test(`${eventType} ${JSON.stringify(payload || {})}`); }
+
 export function registerExtensionSync(app: Express) {
   app.post("/api/extension/validate", async (req: Request, res: Response) => {
     try {
@@ -20,7 +23,7 @@ export function registerExtensionSync(app: Express) {
       if (!license || !["active", "trial"].includes(license.status)) return res.status(403).json({ valid: false, code: "license_invalid", message: "Licença inválida ou inativa" });
       const existing = await db.select({ id: licenseDevices.id }).from(licenseDevices).where(and(eq(licenseDevices.licenseId, license.id), eq(licenseDevices.deviceId, device))).limit(1);
       if (existing[0]) await db.update(licenseDevices).set({ lastSeenAt: new Date() }).where(eq(licenseDevices.id, existing[0].id));
-      else if (license.plan === "founder") await db.insert(licenseDevices).values({ licenseId: license.id, deviceId: device, label: "Extensão snyx.store.api · fundador" });
+      else if (isUnlimitedPlan(license.plan)) await db.insert(licenseDevices).values({ licenseId: license.id, deviceId: device, label: "Extensão snyx.store.api · fundador" });
       else {
         const deviceCount = await db.select({ total: count() }).from(licenseDevices).where(eq(licenseDevices.licenseId, license.id));
         if (Number(deviceCount[0]?.total ?? 0) >= license.maxDevices) return res.status(409).json({ valid: false, code: "device_limit", message: "Limite de dispositivos atingido" });
@@ -44,7 +47,7 @@ export function registerExtensionSync(app: Express) {
       if (!db) return res.status(503).json({ ok: false, error: "Banco indisponível" });
       const rows = await db.select({ id: licenses.id, userId: licenses.userId, plan: licenses.plan, status: licenses.status, maxDevices: licenses.maxDevices }).from(licenses).where(eq(licenses.key, serial)).limit(1);
       const license = rows[0];
-      const suspicious = /bypass|tamper|inject|debug|devtools|unauthorized|spoof|invalid/i.test(`${type} ${JSON.stringify(payload || {})}`);
+      const suspicious = isSuspiciousExtensionActivity(type, payload);
       if (!license) {
         await createSecurityAlert({ deviceId: device, alertType: "invalid_license", message: "Tentativa de sincronização com licença inexistente.", payload: { eventType: type } });
         return res.status(403).json({ ok: false, error: "Licença não autorizada" });
@@ -63,7 +66,7 @@ export function registerExtensionSync(app: Express) {
       if (existing[0]) await db.update(licenseDevices).set({ lastSeenAt: new Date() }).where(eq(licenseDevices.id, existing[0].id));
       else {
         const deviceCount = await db.select({ total: count() }).from(licenseDevices).where(eq(licenseDevices.licenseId, license.id));
-        if (license.plan !== "founder" && Number(deviceCount[0]?.total ?? 0) >= license.maxDevices) {
+        if (!isUnlimitedPlan(license.plan) && Number(deviceCount[0]?.total ?? 0) >= license.maxDevices) {
           await createSecurityAlert({ userId: license.userId, licenseId: license.id, deviceId: device, alertType: "device_limit", message: "Tentativa de conectar dispositivo acima do limite da licença.", payload: { eventType: type } });
           return res.status(409).json({ ok: false, error: "Limite de dispositivos atingido" });
         }
