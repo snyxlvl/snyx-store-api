@@ -6,6 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getAdminDashboardSummary } from "./db";
+import { countAdminEvents, getAdminPreferences, listAdminCustomers, listAdminEvents, listAdminLicenses, listAdminSubscriptions, listSupportTickets, updateAdminPreferences } from "./admin-data";
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
@@ -21,16 +22,23 @@ export const appRouter = router({
   }),
   billing: router({
     createCheckoutSession: protectedProcedure.input(z.object({ planId: z.enum(["pro", "studio"]) })).mutation(async ({ ctx, input }) => {
-      const plan = planFromId(input.planId);
-      if (!stripe) throw new Error("Configure o Stripe em Settings → Payment para ativar o checkout.");
-      const priceId = input.planId === "pro" ? process.env.STRIPE_PRICE_PRO : process.env.STRIPE_PRICE_STUDIO;
-      if (!priceId) throw new Error(`O preço do plano ${plan.name} ainda não foi configurado.`);
-      const origin = ctx.req.headers.origin || "http://localhost:3000";
-      const session = await stripe.checkout.sessions.create({ mode: "subscription", line_items: [{ price: priceId, quantity: 1 }], customer_email: ctx.user.email || undefined, client_reference_id: String(ctx.user.id), allow_promotion_codes: true, metadata: { user_id: String(ctx.user.id), customer_email: ctx.user.email || "", customer_name: ctx.user.name || "", plan_id: input.planId }, success_url: `${origin}/app?checkout=success`, cancel_url: `${origin}/?checkout=cancelled#plans` });
+      const plan = planFromId(input.planId); if (!stripe) throw new Error("Configure o Stripe em Settings → Payment para ativar o checkout.");
+      const priceId = input.planId === "pro" ? process.env.STRIPE_PRICE_PRO : process.env.STRIPE_PRICE_STUDIO; if (!priceId) throw new Error(`O preço do plano ${plan.name} ainda não foi configurado.`);
+      const origin = ctx.req.headers.origin || "http://localhost:3000"; const session = await stripe.checkout.sessions.create({ mode: "subscription", line_items: [{ price: priceId, quantity: 1 }], customer_email: ctx.user.email || undefined, client_reference_id: String(ctx.user.id), allow_promotion_codes: true, metadata: { user_id: String(ctx.user.id), customer_email: ctx.user.email || "", customer_name: ctx.user.name || "", plan_id: input.planId }, success_url: `${origin}/app?checkout=success`, cancel_url: `${origin}/?checkout=cancelled#plans` });
       return { url: session.url };
     }),
   }),
   dashboard: router({ summary: adminProcedure.query(() => getAdminDashboardSummary()) }),
+  admin: router({
+    licenses: adminProcedure.query(() => listAdminLicenses()),
+    customers: adminProcedure.query(() => listAdminCustomers()),
+    subscriptions: adminProcedure.query(() => listAdminSubscriptions()),
+    activity: adminProcedure.query(() => listAdminEvents()),
+    support: adminProcedure.query(() => listSupportTickets()),
+    eventCount: adminProcedure.query(() => countAdminEvents()),
+    preferences: adminProcedure.query(({ ctx }) => getAdminPreferences(ctx.user.id)),
+    updatePreferences: adminProcedure.input(z.object({ extensionEnabled: z.boolean().optional(), emailAlerts: z.boolean().optional() })).mutation(({ ctx, input }) => updateAdminPreferences(ctx.user.id, input)),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
