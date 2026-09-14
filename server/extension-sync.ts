@@ -15,6 +15,13 @@ export function registerExtensionSync(app: Express) {
     const rows = await db.select({ version: extensionVersions.version, fileUrl: extensionVersions.fileUrl, checksum: extensionVersions.checksum, changelog: extensionVersions.changelog, createdAt: extensionVersions.createdAt }).from(extensionVersions).where(eq(extensionVersions.active, 1)).orderBy(desc(extensionVersions.createdAt)).limit(1);
     return res.json({ ok: true, version: rows[0] || null });
   });
+  app.get("/api/extension/download", async (_req: Request, res: Response) => {
+    const db = await getDb();
+    if (!db) return res.status(503).json({ ok: false, error: "Banco indisponível" });
+    const rows = await db.select({ fileUrl: extensionVersions.fileUrl }).from(extensionVersions).where(eq(extensionVersions.active, 1)).orderBy(desc(extensionVersions.createdAt)).limit(1);
+    if (!rows[0]?.fileUrl) return res.status(404).json({ ok: false, error: "Nenhuma versão publicada" });
+    return res.redirect(rows[0].fileUrl);
+  });
   app.post("/api/extension/validate", async (req: Request, res: Response) => {
     try {
       const { licenseKey, serial: legacySerial, deviceId } = req.body || {};
