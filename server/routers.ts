@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getAdminDashboardSummary } from "./db";
-import { activateExtensionVersion, countAdminEvents, getAdminPreferences, getGlobalControl, listAdminCustomers, listAdminEvents, listAdminLicenses, listAdminSubscriptions, listExtensionVersions, listSecurityAlerts, listSupportTickets, resolveSecurityAlert, setGlobalControl, updateAdminPreferences } from "./admin-data";
+import { activateExtensionVersion, countAdminEvents, createAdminLicense, getAdminPreferences, getGlobalControl, listAdminCustomers, listAdminEvents, listAdminLicenses, listAdminSubscriptions, listExtensionVersions, listSecurityAlerts, listSupportTickets, resolveSecurityAlert, setGlobalControl, updateAdminPreferences } from "./admin-data";
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
@@ -31,6 +31,7 @@ export const appRouter = router({
   dashboard: router({ summary: adminProcedure.query(() => getAdminDashboardSummary()) }),
   admin: router({
     licenses: adminProcedure.query(() => listAdminLicenses()),
+    createLicense: adminProcedure.input(z.object({ userId: z.number().int().positive(), plan: z.string().min(1).max(32), status: z.enum(["active", "trial", "paused"]), maxDevices: z.number().int().min(1).max(2147483647), expiresAt: z.coerce.date().nullable().optional() })).mutation(({ input }) => createAdminLicense(input)),
     customers: adminProcedure.query(() => listAdminCustomers()),
     subscriptions: adminProcedure.query(() => listAdminSubscriptions()),
     activity: adminProcedure.query(() => listAdminEvents()),
