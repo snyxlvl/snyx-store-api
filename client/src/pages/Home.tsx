@@ -1,33 +1,72 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
+import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { toast } from "sonner";
+import { ArrowUpRight, Check, ChevronDown, Command, Layers3, Menu, Play, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Link } from "wouter";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
+const plans = [
+  { id: "trial", name: "Free trial", price: "0", suffix: "por 7 dias", eyebrow: "COMECE SEM RISCO", description: "Descubra como o seu fluxo pode rodar com mais presença e menos troca de abas.", features: ["1 dispositivo", "Todas as automações", "Suporte por e-mail"], tone: "plain" },
+  { id: "pro", name: "Pro mensal", price: "19", suffix: "/ mês", eyebrow: "PARA QUEM FAZ ACONTECER", description: "Um copiloto operacional para transformar contexto em entrega todos os dias.", features: ["Até 3 dispositivos", "Workspace inteligente", "Atualizações contínuas"], tone: "coral", popular: true },
+  { id: "studio", name: "Studio anual", price: "190", suffix: "/ ano", eyebrow: "PARA PEQUENAS EQUIPES", description: "Mais espaço para criar, mais controle para administrar, mais tranquilidade para crescer.", features: ["Até 10 dispositivos", "Gestão de licenças", "Suporte prioritário"], tone: "lime" },
+];
+
+function Logo({ inverse = false }: { inverse?: boolean }) {
+  return <div className={`flex items-center gap-2.5 font-semibold tracking-[-0.04em] ${inverse ? "text-[#f9f4ed]" : "text-[#171717]"}`}><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[#f36c4d] text-sm font-black text-[#171717] shadow-[3px_3px_0_#171717]">s.</span><span className="text-[17px]">snyx.store.api</span></div>;
+}
+
+function DotGrid() { return <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(#f9f4ed_1px,transparent_1px)] [background-size:22px_22px]" />; }
+
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState<number | null>(0);
+  const { user } = useAuth();
+  const checkout = trpc.billing.createCheckoutSession.useMutation();
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  const handleBuy = async (planId: string) => {
+    if (planId === "trial") {
+      if (!user) return startLogin();
+      toast.success("Seu teste grátis está pronto para começar.");
+      window.location.href = "/app";
+      return;
+    }
+    if (!user) return startLogin();
+    try {
+      const result = await checkout.mutateAsync({ planId: planId as "pro" | "studio" });
+      if (result.url) window.open(result.url, "_blank");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o checkout agora.");
+    }
+  };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
-  );
+  return <div className="min-h-screen overflow-hidden bg-[#f6f1e9] text-[#171717] selection:bg-[#f36c4d] selection:text-[#171717]">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[#171717]/10 bg-[#f6f1e9]/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-5 lg:px-8"><Logo />
+        <nav className="hidden items-center gap-8 text-[13px] font-medium text-[#171717]/65 md:flex"><a href="#produto" className="transition hover:text-[#171717]">Produto</a><a href="#como-funciona" className="transition hover:text-[#171717]">Como funciona</a><a href="#planos" className="transition hover:text-[#171717]">Planos</a><a href="#faq" className="transition hover:text-[#171717]">FAQ</a></nav>
+        <div className="hidden items-center gap-3 md:flex"><Link href="/app" className="px-3 py-2 text-[13px] font-medium text-[#171717]/65 hover:text-[#171717]">Área do cliente</Link><Button onClick={() => user ? (window.location.href = "/app") : startLogin()} className="h-10 rounded-full bg-[#171717] px-5 text-xs font-semibold text-[#f9f4ed] shadow-[3px_3px_0_#f36c4d] hover:bg-[#2c2c2c]">Começar agora <ArrowUpRight className="ml-2 h-3.5 w-3.5" /></Button></div>
+        <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Abrir menu">{mobileOpen ? <X /> : <Menu />}</button>
+      </div>
+      {mobileOpen && <div className="border-t border-[#171717]/10 bg-[#f6f1e9] px-5 py-5 md:hidden"><div className="flex flex-col gap-4 text-sm"><a href="#produto" onClick={() => setMobileOpen(false)}>Produto</a><a href="#planos" onClick={() => setMobileOpen(false)}>Planos</a><Link href="/app">Área do cliente</Link><Button onClick={() => startLogin()} className="rounded-full bg-[#171717] text-[#f9f4ed]">Começar agora</Button></div></div>}
+    </header>
+
+    <main>
+      <section className="relative overflow-hidden bg-[#171717] px-5 pb-20 pt-[154px] text-[#f9f4ed] lg:px-8 lg:pb-28 lg:pt-[180px]"><DotGrid /><div className="relative mx-auto grid max-w-[1240px] items-end gap-14 lg:grid-cols-[1.05fr_.95fr]">
+        <div className="max-w-[680px]"><div className="mb-7 flex items-center gap-3 text-[10px] font-bold tracking-[0.22em] text-[#f36c4d]"><span className="h-px w-7 bg-[#f36c4d]" /> EXTENSÃO PARA QUEM NÃO PARA</div><h1 className="max-w-[720px] text-[clamp(3.6rem,8vw,7.8rem)] font-semibold leading-[.87] tracking-[-0.09em]">Seu fluxo,<br /><span className="text-[#f36c4d]">em modo</span><br />snyx.</h1><p className="mt-9 max-w-[500px] text-[17px] leading-7 text-[#f9f4ed]/60">Conecte Lovable, ChatGPT, GitHub e seu jeito de trabalhar em uma camada única. Menos contexto perdido. Mais coisas terminadas.</p><div className="mt-10 flex flex-wrap items-center gap-4"><Button onClick={() => handleBuy("trial")} className="h-13 rounded-full bg-[#f36c4d] px-7 text-sm font-bold text-[#171717] shadow-[4px_4px_0_#f9f4ed] hover:bg-[#ff805f]">Testar grátis por 7 dias <ArrowUpRight className="ml-2 h-4 w-4" /></Button><a href="#produto" className="flex h-13 items-center gap-2 rounded-full border border-[#f9f4ed]/20 px-6 text-sm font-medium text-[#f9f4ed]/75 transition hover:border-[#f9f4ed]/50 hover:text-[#f9f4ed]"><Play className="h-3.5 w-3.5 fill-current" /> Ver por dentro</a></div></div>
+        <div className="relative mx-auto w-full max-w-[500px] lg:pb-4"><div className="absolute -right-6 -top-16 hidden rotate-6 rounded-full border border-[#f36c4d]/50 px-4 py-2 text-[10px] font-bold tracking-[0.18em] text-[#f36c4d] sm:block">CONTEXT IS POWER</div><div className="relative rounded-[28px] border border-[#f9f4ed]/15 bg-[#242424] p-3 shadow-[12px_16px_0_#f36c4d]"><div className="rounded-[20px] bg-[#f6f1e9] p-4 text-[#171717]"><div className="flex items-center justify-between border-b border-[#171717]/10 pb-4"><div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-[#f36c4d] text-xs font-black">s.</span><span className="text-xs font-semibold">snyx.store.api</span></div><span className="rounded-full bg-[#d9f5b2] px-2.5 py-1 text-[9px] font-bold">● LIVE</span></div><div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-[#171717] p-4 text-[#f9f4ed]"><div className="mb-7 flex justify-between"><span className="text-[10px] text-[#f9f4ed]/50">TODAY</span><Zap className="h-3.5 w-3.5 text-[#f36c4d]" /></div><strong className="text-3xl tracking-[-.06em]">41h</strong><p className="mt-1 text-[10px] text-[#f9f4ed]/50">economizadas</p></div><div className="rounded-2xl bg-[#d9f5b2] p-4"><div className="mb-7 flex justify-between"><span className="text-[10px] text-[#171717]/50">WORKSPACE</span><Layers3 className="h-3.5 w-3.5" /></div><strong className="text-3xl tracking-[-.06em]">12.8k</strong><p className="mt-1 text-[10px] text-[#171717]/50">tarefas resolvidas</p></div></div><div className="mt-3 rounded-2xl border border-[#171717]/10 p-4"><div className="flex items-center justify-between"><span className="text-xs font-semibold">Atividade recente</span><span className="text-[10px] text-[#171717]/50">agora</span></div>{["Prompt aprimorado", "Preview atualizado", "Deploy preparado"].map((item, i) => <div key={item} className="mt-3 flex items-center gap-3 text-[11px]"><span className={`h-2 w-2 rounded-full ${i === 0 ? "bg-[#f36c4d]" : "bg-[#9ac85b]"}`} />{item}<span className="ml-auto text-[10px] text-[#171717]/40">concluído</span></div>)}</div></div></div><div className="absolute -bottom-8 -left-7 hidden rotate-[-7deg] rounded-2xl bg-[#f9f4ed] p-4 text-[#171717] shadow-[5px_5px_0_#f36c4d] sm:block"><div className="text-[9px] font-bold tracking-[.16em] text-[#171717]/45">MOMENTUM INDEX</div><div className="mt-1 text-2xl font-semibold tracking-[-.06em]">+24.8%</div></div></div>
+      </div></section>
+
+      <section className="border-b border-[#171717]/10 bg-[#f36c4d] px-5 py-5 lg:px-8"><div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-4 text-[11px] font-bold uppercase tracking-[.14em] text-[#171717]/75"><span>Feito para o seu próximo nível</span><span className="hidden h-px flex-1 bg-[#171717]/20 md:block" /><span>Lovable</span><span>ChatGPT</span><span>GitHub</span><span>Supabase</span><span>+ seu fluxo</span></div></section>
+
+      <section id="produto" className="bg-[#f6f1e9] px-5 py-24 lg:px-8 lg:py-32"><div className="mx-auto max-w-[1240px]"><div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr]"><div><div className="mb-5 text-[10px] font-bold tracking-[.22em] text-[#f36c4d]">NÃO É SÓ MAIS UMA EXTENSÃO</div><h2 className="max-w-[500px] text-5xl font-semibold leading-[.95] tracking-[-.07em] lg:text-7xl">Ferramentas que entendem <span className="italic">contexto.</span></h2></div><div className="flex items-end"><p className="max-w-[470px] text-[17px] leading-7 text-[#171717]/60">O snyx.store.api fica no intervalo entre a ideia e a entrega. Ele reconhece onde você está, o que está tentando fazer e move o trabalho para frente.</p></div></div><div className="mt-16 grid gap-4 md:grid-cols-3"><div className="group rounded-[24px] bg-[#171717] p-7 text-[#f9f4ed] transition hover:-translate-y-1"><div className="mb-16 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f36c4d] text-[#171717]"><Command className="h-5 w-5" /></div><div className="text-xs font-bold uppercase tracking-[.12em] text-[#f9f4ed]/40">01 / CONTEXTO</div><h3 className="mt-3 text-2xl font-semibold tracking-[-.05em]">Capture sem interromper.</h3><p className="mt-3 text-sm leading-6 text-[#f9f4ed]/55">Seu pedido, projeto e stack chegam juntos no lugar certo.</p></div><div className="group rounded-[24px] bg-[#d9f5b2] p-7 transition hover:-translate-y-1"><div className="mb-16 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#171717] text-[#d9f5b2]"><Sparkles className="h-5 w-5" /></div><div className="text-xs font-bold uppercase tracking-[.12em] text-[#171717]/45">02 / CLAREZA</div><h3 className="mt-3 text-2xl font-semibold tracking-[-.05em]">Melhore o que importa.</h3><p className="mt-3 text-sm leading-6 text-[#171717]/55">Transforme intenções soltas em prompts técnicos que dão direção.</p></div><div className="group rounded-[24px] border border-[#171717]/15 p-7 transition hover:-translate-y-1 hover:bg-white"><div className="mb-16 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f36c4d]"><ShieldCheck className="h-5 w-5" /></div><div className="text-xs font-bold uppercase tracking-[.12em] text-[#171717]/45">03 / CONTROLE</div><h3 className="mt-3 text-2xl font-semibold tracking-[-.05em]">Licenças sem atrito.</h3><p className="mt-3 text-sm leading-6 text-[#171717]/55">Veja seus dispositivos, planos e acessos em um console simples.</p></div></div></div></section>
+
+      <section id="como-funciona" className="bg-[#171717] px-5 py-24 text-[#f9f4ed] lg:px-8 lg:py-32"><div className="mx-auto max-w-[1240px]"><div className="flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><div className="mb-5 text-[10px] font-bold tracking-[.22em] text-[#f36c4d]">SEU JEITO DE TRABALHAR, SÓ QUE MELHOR</div><h2 className="max-w-[590px] text-5xl font-semibold leading-[.95] tracking-[-.07em] lg:text-7xl">Do primeiro rascunho ao <span className="text-[#d9f5b2]">done.</span></h2></div><p className="max-w-[300px] text-sm leading-6 text-[#f9f4ed]/45">Instale em poucos segundos. Conecte o seu workspace. Deixe o snyx cuidar do resto.</p></div><div className="mt-16 grid border-t border-[#f9f4ed]/15 md:grid-cols-3">{[{n:"01",title:"Instale",text:"Baixe a extensão e escolha os serviços que fazem parte do seu stack."},{n:"02",title:"Conecte",text:"Abra um workspace e o snyx reconhece o projeto, o repo e o momento."},{n:"03",title:"Avance",text:"Capture, aprimore, execute e acompanhe sem perder o fio da meada."}].map((item) => <div key={item.n} className="border-b border-[#f9f4ed]/15 py-7 md:border-b-0 md:border-r md:px-8 md:first:pl-0"><span className="text-xs font-bold text-[#f36c4d]">{item.n}</span><h3 className="mt-12 text-3xl font-semibold tracking-[-.06em]">{item.title}</h3><p className="mt-4 max-w-[260px] text-sm leading-6 text-[#f9f4ed]/45">{item.text}</p></div>)}</div></div></section>
+
+      <section id="planos" className="bg-[#f6f1e9] px-5 py-24 lg:px-8 lg:py-32"><div className="mx-auto max-w-[1240px]"><div className="flex flex-col justify-between gap-6 md:flex-row md:items-end"><div><div className="mb-5 text-[10px] font-bold tracking-[.22em] text-[#f36c4d]">ESCOLHA SEU RITMO</div><h2 className="text-5xl font-semibold leading-[.95] tracking-[-.07em] lg:text-7xl">Planos que <span className="italic">acompanham.</span></h2></div><p className="max-w-[300px] text-sm leading-6 text-[#171717]/50">Comece no seu tempo. Mude quando quiser. Sem letra miúda.</p></div><div className="mt-14 grid gap-4 lg:grid-cols-3">{plans.map((plan) => <div key={plan.id} className={`relative flex flex-col rounded-[24px] p-7 ${plan.tone === "coral" ? "bg-[#f36c4d] shadow-[6px_6px_0_#171717]" : plan.tone === "lime" ? "bg-[#d9f5b2]" : "border border-[#171717]/15 bg-[#fffdf8]"}`}>{plan.popular && <div className="absolute right-5 top-5 rounded-full bg-[#171717] px-3 py-1 text-[9px] font-bold tracking-[.14em] text-[#f9f4ed]">MAIS POPULAR</div>}<div className="text-[10px] font-bold tracking-[.17em] opacity-55">{plan.eyebrow}</div><h3 className="mt-9 text-3xl font-semibold tracking-[-.06em]">{plan.name}</h3><p className="mt-3 min-h-[48px] text-sm leading-6 opacity-60">{plan.description}</p><div className="my-8 flex items-end gap-1 border-b border-current/15 pb-8"><span className="text-sm opacity-60">R$</span><span className="text-6xl font-semibold tracking-[-.09em]">{plan.price}</span><span className="pb-2 text-sm opacity-60">{plan.suffix}</span></div><div className="space-y-3 text-sm">{plan.features.map((feature) => <div key={feature} className="flex items-center gap-2.5"><span className="grid h-5 w-5 place-items-center rounded-full bg-[#171717]/10"><Check className="h-3 w-3" /></span>{feature}</div>)}</div><Button onClick={() => handleBuy(plan.id)} disabled={checkout.isPending} className={`mt-9 h-12 rounded-full text-sm font-semibold ${plan.tone === "plain" ? "bg-[#171717] text-[#f9f4ed] hover:bg-[#333]" : "bg-[#171717] text-[#f9f4ed] hover:bg-[#333]"}`}>{plan.id === "trial" ? "Começar grátis" : "Escolher plano"}<ArrowUpRight className="ml-2 h-4 w-4" /></Button></div>)}</div></div></section>
+
+      <section id="faq" className="bg-[#d9f5b2] px-5 py-24 lg:px-8 lg:py-32"><div className="mx-auto grid max-w-[1000px] gap-12 md:grid-cols-[.7fr_1.3fr]"><div><div className="mb-5 text-[10px] font-bold tracking-[.22em] text-[#171717]/50">AINDA PENSANDO?</div><h2 className="text-5xl font-semibold leading-[.95] tracking-[-.07em]">Perguntas<br />frequentes.</h2></div><div>{[{q:"O teste grátis pede cartão?",a:"Não. Você pode experimentar o snyx.store.api por 7 dias sem compromisso e decidir depois."},{q:"Posso usar em mais de um dispositivo?",a:"Sim. O Pro inclui até 3 dispositivos e o Studio até 10. Você gerencia tudo no console."},{q:"Como cancelo meu plano?",a:"Você pode pausar ou cancelar quando quiser pela área do cliente. O acesso segue até o fim do ciclo."},{q:"O que acontece com minhas chaves?",a:"As licenças ficam vinculadas à sua conta e aparecem em um único painel para facilitar a gestão."}].map((item, i) => <div key={item.q} className="border-t border-[#171717]/20 py-5"><button className="flex w-full items-center justify-between text-left text-base font-semibold" onClick={() => setFaqOpen(faqOpen === i ? null : i)}>{item.q}<ChevronDown className={`h-4 w-4 transition-transform ${faqOpen === i ? "rotate-180" : ""}`} /></button>{faqOpen === i && <p className="max-w-[520px] pt-3 text-sm leading-6 text-[#171717]/60">{item.a}</p>}</div>)}</div></div></section>
+    </main>
+    <footer className="bg-[#171717] px-5 py-10 text-[#f9f4ed] lg:px-8"><div className="mx-auto flex max-w-[1240px] flex-col justify-between gap-7 md:flex-row md:items-end"><div><Logo inverse /><p className="mt-4 max-w-[270px] text-xs leading-5 text-[#f9f4ed]/40">A camada operacional para quem transforma ideia em entrega.</p></div><div className="flex gap-6 text-xs text-[#f9f4ed]/45"><a href="#produto" className="hover:text-[#f9f4ed]">Produto</a><a href="#planos" className="hover:text-[#f9f4ed]">Planos</a><Link href="/app" className="hover:text-[#f9f4ed]">Área do cliente</Link></div><div className="text-[10px] uppercase tracking-[.16em] text-[#f9f4ed]/30">© 2026 snyx.store.api</div></div></footer>
+  </div>;
 }
