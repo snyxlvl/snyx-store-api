@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const { user, loading, logout } = useAuth(); const isAdmin = user?.role === "admin";
   const summaryQuery = trpc.dashboard.summary.useQuery(undefined, { enabled: Boolean(isAdmin && active === "Visão geral"), retry: false });
   const licensesQuery = trpc.admin.licenses.useQuery(undefined, { enabled: Boolean(isAdmin && active === "Licenças"), retry: false });
-  const customersQuery = trpc.admin.customers.useQuery(undefined, { enabled: Boolean(isAdmin && active === "Clientes"), retry: false });
+  const customersQuery = trpc.admin.customers.useQuery(undefined, { enabled: Boolean(isAdmin && (active === "Clientes" || licenseDialogOpen)), retry: false });
   const subscriptionsQuery = trpc.admin.subscriptions.useQuery(undefined, { enabled: Boolean(isAdmin && active === "Assinaturas"), retry: false });
   const activityQuery = trpc.admin.activity.useQuery(undefined, { enabled: Boolean(isAdmin && active === "Atividade"), retry: false });
   const supportQuery = trpc.admin.support.useQuery(undefined, { enabled: Boolean(isAdmin && active === "Suporte"), retry: false });
