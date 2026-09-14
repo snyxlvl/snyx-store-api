@@ -10,8 +10,8 @@ export function isSuspiciousExtensionActivity(eventType: string, payload: unknow
 export function registerExtensionSync(app: Express) {
   app.post("/api/extension/validate", async (req: Request, res: Response) => {
     try {
-      const { licenseKey, deviceId } = req.body || {};
-      const serial = String(licenseKey || "").trim().toUpperCase();
+      const { licenseKey, serial: legacySerial, deviceId } = req.body || {};
+      const serial = String(licenseKey || legacySerial || "").trim().toUpperCase();
       const device = String(deviceId || "").trim();
       if (!serial || !device) return res.status(400).json({ valid: false, code: "invalid_request", message: "licenseKey e deviceId são obrigatórios" });
       const db = await getDb();
